@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PSI Readings</title>
+  <style>
+    /* 简单CSS样式，让表格更易读 */
+    table, th, td {
+      border: 1px solid #333;
+      border-collapse: collapse;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>PSI Readings from data.gov.sg</h1>
+  <!-- 表格容器，JS会在这里动态生成表格 -->
+  <div id="psi-table">Loading data...</div>
+
+  <script>
+    // 调用新加坡PSI实时API
+    fetch('https://api.data.gov.sg/v1/environment/psi')
+      .then(response => response.json()) // 将响应转为JSON
+      .then(data => {
+        // 取最新的一条数据（API返回的items按时间排序，第1条为最新）
+        const latestData = data.items[0];
+        const readings = latestData.readings;
+
+        // 定义需要展示的12个指标（从o3_sub_index到psi_twenty_four_hourly的各区域）
+        const metrics = [
+          'o3_sub_index',
+          'pm10_sub_index',
+          'pm25_sub_index',
+          'co_sub_index',
+          'no2_sub_index',
+          'so2_sub_index',
+          'psi_twenty_four_hourly_national',
+          'psi_twenty_four_hourly_central',
+          'psi_twenty_four_hourly_east',
+          'psi_twenty_four_hourly_west',
+          'psi_twenty_four_hourly_north',
+          'psi_twenty_four_hourly_south'
+        ];
+
+        // 创建表格DOM元素
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+        const headerRow = document.createElement('tr');
+
+        // 生成表头（指标名称）
+        metrics.forEach(metric => {
+          const th = document.createElement('th');
+          th.textContent = metric.replace(/_/g, ' '); // 下划线转空格，增强可读性
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // 生成数据行（每个指标的数值）
+        const dataRow = document.createElement('tr');
+        metrics.forEach(metric => {
+          const td = document.createElement('td');
+          let value = 'N/A'; // 默认值
+
+          // 处理“psi_twenty_four_hourly_xxx”类型的区域指标
+          if (metric.includes('psi_twenty_four_hourly_')) {
+            const region = metric.split('_').pop(); // 提取区域（如national、central）
+            if (readings.psi_twenty_four_hourly && readings.psi_twenty_four_hourly[region]) {
+              value = readings.psi_twenty_four_hourly[region];
+            }
+          } 
+          // 处理“xxx_sub_index”类型的分指数（取national区域的值）
+          else if (readings[metric] && readings[metric].national) {
+            value = readings[metric].national;
+          }
+
+          td.textContent = value;
+          dataRow.appendChild(td);
+        });
+        tbody.appendChild(dataRow);
+        table.appendChild(tbody);
+
+        // 将表格插入页面
+        document.getElementById('psi-table').innerHTML = ''; // 清空“Loading...”
+        document.getElementById('psi-table').appendChild(table);
+      })
+      .catch(error => {
+        // 处理API调用失败的情况
+        console.error('API调用失败:', error);
+        document.getElementById('psi-table').textContent = 'Failed to load data. Please check console for error.';
+      });
+  </script>
+</body>
+</html>

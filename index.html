@@ -1,98 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>PSI Readings</title>
-  <style>
-    /* 简单CSS样式，让表格更易读 */
-    table, th, td {
-      border: 1px solid #333;
-      border-collapse: collapse;
-      padding: 8px;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSI Readings</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-  <h1>PSI Readings from data.gov.sg</h1>
-  <!-- 表格容器，JS会在这里动态生成表格 -->
-  <div id="psi-table">Loading data...</div>
+    <h1>PSI Readings from data.gov.sg</h1>
+    <div id="psiTableContainer">
+        <p>Loading...</p>
+    </div>
 
-  <script>
-    // 调用新加坡PSI实时API
-    fetch('https://api.data.gov.sg/v1/environment/psi')
-      .then(response => response.json()) // 将响应转为JSON
-      .then(data => {
-        // 取最新的一条数据（API返回的items按时间排序，第1条为最新）
-        const latestData = data.items[0];
-        const readings = latestData.readings;
+    <script>
+        // 模拟从API获取的JSON数据（实际场景可通过fetch请求替换）
+        const apiData = {
+            "region_metadata": [
+                {"name": "west", "label_location": {"latitude": 1.35735, "longitude": 103.7}},
+                {"name": "east", "label_location": {"latitude": 1.35735, "longitude": 103.94}},
+                {"name": "central", "label_location": {"latitude": 1.35735, "longitude": 103.82}},
+                {"name": "south", "label_location": {"latitude": 1.29587, "longitude": 103.82}},
+                {"name": "north", "label_location": {"latitude": 1.41803, "longitude": 103.82}}
+            ],
+            "items": [
+                {
+                    "timestamp": "2025-10-06T20:00:00+08:00",
+                    "update_timestamp": "2025-10-06T20:01:01+08:00",
+                    "readings": {
+                        "o3_sub_index": {"west": 3, "east": 14, "central": 7, "south": 7, "north": 9},
+                        "pm10_twenty_four_hourly": {"west": 27, "east": 33, "central": 32, "south": 26, "north": 23},
+                        "pm10_sub_index": {"west": 27, "east": 33, "central": 32, "south": 26, "north": 23},
+                        "co_sub_index": {"west": 3, "east": 4, "central": 2, "south": 4, "north": 4},
+                        "pm25_twenty_four_hourly": {"west": 18, "east": 19, "central": 22, "south": 14, "north": 16},
+                        "so2_sub_index": {"west": 3, "east": 2, "central": 4, "south": 2, "north": 7},
+                        "co_eight_hour_max": {"west": 0, "east": 0, "central": 0, "south": 0, "north": 0},
+                        "no2_one_hour_max": {"west": 46, "east": 40, "central": 41, "south": 36, "north": 30},
+                        "so2_twenty_four_hourly": {"west": 5, "east": 4, "central": 6, "south": 3, "north": 11},
+                        "pm25_sub_index": {"west": 58, "east": 59, "central": 62, "south": 53, "north": 56},
+                        "psi_twenty_four_hourly": {"west": 58, "east": 59, "central": 62, "south": 53, "north": 56},
+                        "o3_eight_hour_max": {"west": 6, "east": 32, "central": 17, "south": 16, "north": 21}
+                    }
+                }
+            ],
+            "api_info": {"status": "healthy"}
+        };
 
-        // 定义需要展示的12个指标（从o3_sub_index到psi_twenty_four_hourly的各区域）
-        const metrics = [
-          'o3_sub_index',
-          'pm10_sub_index',
-          'pm25_sub_index',
-          'co_sub_index',
-          'no2_sub_index',
-          'so2_sub_index',
-          'psi_twenty_four_hourly_national',
-          'psi_twenty_four_hourly_central',
-          'psi_twenty_four_hourly_east',
-          'psi_twenty_four_hourly_west',
-          'psi_twenty_four_hourly_north',
-          'psi_twenty_four_hourly_south'
-        ];
-
-        // 创建表格DOM元素
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const tbody = document.createElement('tbody');
-        const headerRow = document.createElement('tr');
-
-        // 生成表头（指标名称）
-        metrics.forEach(metric => {
-          const th = document.createElement('th');
-          th.textContent = metric.replace(/_/g, ' '); // 下划线转空格，增强可读性
-          headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        // 生成数据行（每个指标的数值）
-        const dataRow = document.createElement('tr');
-        metrics.forEach(metric => {
-          const td = document.createElement('td');
-          let value = 'N/A'; // 默认值
-
-          // 处理“psi_twenty_four_hourly_xxx”类型的区域指标
-          if (metric.includes('psi_twenty_four_hourly_')) {
-            const region = metric.split('_').pop(); // 提取区域（如national、central）
-            if (readings.psi_twenty_four_hourly && readings.psi_twenty_four_hourly[region]) {
-              value = readings.psi_twenty_four_hourly[region];
+        // 处理数据并生成表格的函数
+        function generatePSITable(data) {
+            const container = document.getElementById('psiTableContainer');
+            const items = data.items;
+            if (!items || items.length === 0) {
+                container.innerHTML = "<p>No data available.</p>";
+                return;
             }
-          } 
-          // 处理“xxx_sub_index”类型的分指数（取national区域的值）
-          else if (readings[metric] && readings[metric].national) {
-            value = readings[metric].national;
-          }
 
-          td.textContent = value;
-          dataRow.appendChild(td);
-        });
-        tbody.appendChild(dataRow);
-        table.appendChild(tbody);
+            // 获取最新读数（示例中items仅一条）
+            const latestReadings = items[0].readings;
+            // 提取所有区域名称
+            const regions = data.region_metadata.map(region => region.name);
+            // 定义需要展示的12个指标
+            const metrics = [
+                "o3_sub_index",
+                "pm10_twenty_four_hourly",
+                "pm10_sub_index",
+                "co_sub_index",
+                "pm25_twenty_four_hourly",
+                "so2_sub_index",
+                "co_eight_hour_max",
+                "no2_one_hour_max",
+                "so2_twenty_four_hourly",
+                "pm25_sub_index",
+                "psi_twenty_four_hourly",
+                "o3_eight_hour_max"
+            ];
 
-        // 将表格插入页面
-        document.getElementById('psi-table').innerHTML = ''; // 清空“Loading...”
-        document.getElementById('psi-table').appendChild(table);
-      })
-      .catch(error => {
-        // 处理API调用失败的情况
-        console.error('API调用失败:', error);
-        document.getElementById('psi-table').textContent = 'Failed to load data. Please check console for error.';
-      });
-  </script>
+            // 创建表格元素
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+            const headerRow = document.createElement('tr');
+
+            // 构建表头（第一列为“指标”，后续列为“区域”）
+            headerRow.appendChild(document.createElement('th')).textContent = "Metric";
+            regions.forEach(region => {
+                headerRow.appendChild(document.createElement('th')).textContent = region;
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // 构建表格内容（每行对应一个指标，每列对应一个区域的数值）
+            metrics.forEach(metric => {
+                const row = document.createElement('tr');
+                // 第一列：指标名称（下划线替换为空格，增强可读性）
+                row.appendChild(document.createElement('td')).textContent = metric.replace(/_/g, ' ');
+                // 后续列：各区域的指标数值
+                regions.forEach(region => {
+                    const cell = document.createElement('td');
+                    if (latestReadings[metric] && latestReadings[metric][region] !== undefined) {
+                        cell.textContent = latestReadings[metric][region];
+                    } else {
+                        cell.textContent = "N/A"; // 无数据时显示N/A
+                    }
+                    row.appendChild(cell);
+                });
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(tbody);
+            container.innerHTML = ''; // 清空“Loading...”提示
+            container.appendChild(table);
+
+            // 显示数据时间戳
+            const timeInfo = document.createElement('p');
+            timeInfo.textContent = `Data timestamp: ${items[0].timestamp}`;
+            container.appendChild(timeInfo);
+        }
+
+        // 调用函数生成表格（实际场景可替换为fetch API请求）
+        generatePSITable(apiData);
+
+        // 若需从真实API获取数据，可替换为以下代码：
+        /*
+        fetch('https://api.data.gov.sg/v1/environment/psi')
+            .then(response => response.json())
+            .then(data => generatePSITable(data))
+            .catch(error => {
+                document.getElementById('psiTableContainer').innerHTML = `<p>Error loading data: ${error.message}</p>`;
+            });
+        */
+    </script>
 </body>
 </html>

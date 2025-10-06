@@ -1,153 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PSI Readings</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 20px 0;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        h1 {
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <h1>PSI Readings from data.gov.sg</h1>
-    <div id="psiTableContainer">
-        <p>Loading...</p>
-    </div>
+import matplotlib.pyplot as plt
+import numpy as np
+from datetime import datetime
+import time
 
-    <script>
-        // 模拟从API获取的JSON数据（实际场景可通过fetch请求替换）
-        const apiData = {
-            "region_metadata": [
-                {"name": "west", "label_location": {"latitude": 1.35735, "longitude": 103.7}},
-                {"name": "east", "label_location": {"latitude": 1.35735, "longitude": 103.94}},
-                {"name": "central", "label_location": {"latitude": 1.35735, "longitude": 103.82}},
-                {"name": "south", "label_location": {"latitude": 1.29587, "longitude": 103.82}},
-                {"name": "north", "label_location": {"latitude": 1.41803, "longitude": 103.82}}
-            ],
-            "items": [
-                {
-                    "timestamp": "2025-10-06T20:00:00+08:00",
-                    "update_timestamp": "2025-10-06T20:01:01+08:00",
-                    "readings": {
-                        "o3_sub_index": {"west": 3, "east": 14, "central": 7, "south": 7, "north": 9},
-                        "pm10_twenty_four_hourly": {"west": 27, "east": 33, "central": 32, "south": 26, "north": 23},
-                        "pm10_sub_index": {"west": 27, "east": 33, "central": 32, "south": 26, "north": 23},
-                        "co_sub_index": {"west": 3, "east": 4, "central": 2, "south": 4, "north": 4},
-                        "pm25_twenty_four_hourly": {"west": 18, "east": 19, "central": 22, "south": 14, "north": 16},
-                        "so2_sub_index": {"west": 3, "east": 2, "central": 4, "south": 2, "north": 7},
-                        "co_eight_hour_max": {"west": 0, "east": 0, "central": 0, "south": 0, "north": 0},
-                        "no2_one_hour_max": {"west": 46, "east": 40, "central": 41, "south": 36, "north": 30},
-                        "so2_twenty_four_hourly": {"west": 5, "east": 4, "central": 6, "south": 3, "north": 11},
-                        "pm25_sub_index": {"west": 58, "east": 59, "central": 62, "south": 53, "north": 56},
-                        "psi_twenty_four_hourly": {"west": 58, "east": 59, "central": 62, "south": 53, "north": 56},
-                        "o3_eight_hour_max": {"west": 6, "east": 32, "central": 17, "south": 16, "north": 21}
-                    }
-                }
-            ],
-            "api_info": {"status": "healthy"}
-        };
+# 1. 初始化图表（设置美观样式）
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS']  # 解决中文显示
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示
+fig, ax = plt.subplots(figsize=(10, 6), facecolor='#f8f9fa')  # 浅色背景更清爽
 
-        // 处理数据并生成表格的函数
-        function generatePSITable(data) {
-            const container = document.getElementById('psiTableContainer');
-            const items = data.items;
-            if (!items || items.length === 0) {
-                container.innerHTML = "<p>No data available.</p>";
-                return;
-            }
+# 2. 模拟实时数据（可替换为你的真实数据来源，如接口、数据库）
+x_data = []
+y_data = []
+update_interval = 1  # 数据更新间隔（秒）
 
-            // 获取最新读数（示例中items仅一条）
-            const latestReadings = items[0].readings;
-            // 提取所有区域名称
-            const regions = data.region_metadata.map(region => region.name);
-            // 定义需要展示的12个指标
-            const metrics = [
-                "o3_sub_index",
-                "pm10_twenty_four_hourly",
-                "pm10_sub_index",
-                "co_sub_index",
-                "pm25_twenty_four_hourly",
-                "so2_sub_index",
-                "co_eight_hour_max",
-                "no2_one_hour_max",
-                "so2_twenty_four_hourly",
-                "pm25_sub_index",
-                "psi_twenty_four_hourly",
-                "o3_eight_hour_max"
-            ];
+def update_data():
+    """实时更新数据的核心函数"""
+    x_data.append(len(x_data) + 1)  # 模拟x轴递增（如时间戳、序号）
+    y_data.append(np.random.randint(10, 50))  # 模拟随机波动的y轴数据（替换为你的数据逻辑）
 
-            // 创建表格元素
-            const table = document.createElement('table');
-            const thead = document.createElement('thead');
-            const tbody = document.createElement('tbody');
-            const headerRow = document.createElement('tr');
+def update_title_with_date():
+    """标题+右下角日期（通过text控件实现）"""
+    main_title = "实时数据监控图表"  # 你的主标题
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 实时日期时间
+    ax.set_title(main_title, fontsize=16, fontweight='bold', pad=20)  # 主标题样式
+    # 日期放在标题右下角：x=0.98（右对齐），y=0.95（标题区域内），transform绑定axes坐标
+    ax.text(0.98, 0.95, current_date, transform=ax.transAxes, 
+            fontsize=10, color='#666', ha='right', va='top')
 
-            // 构建表头（第一列为“指标”，后续列为“区域”）
-            headerRow.appendChild(document.createElement('th')).textContent = "Metric";
-            regions.forEach(region => {
-                headerRow.appendChild(document.createElement('th')).textContent = region;
-            });
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
-
-            // 构建表格内容（每行对应一个指标，每列对应一个区域的数值）
-            metrics.forEach(metric => {
-                const row = document.createElement('tr');
-                // 第一列：指标名称（下划线替换为空格，增强可读性）
-                row.appendChild(document.createElement('td')).textContent = metric.replace(/_/g, ' ');
-                // 后续列：各区域的指标数值
-                regions.forEach(region => {
-                    const cell = document.createElement('td');
-                    if (latestReadings[metric] && latestReadings[metric][region] !== undefined) {
-                        cell.textContent = latestReadings[metric][region];
-                    } else {
-                        cell.textContent = "N/A"; // 无数据时显示N/A
-                    }
-                    row.appendChild(cell);
-                });
-                tbody.appendChild(row);
-            });
-
-            table.appendChild(tbody);
-            container.innerHTML = ''; // 清空“Loading...”提示
-            container.appendChild(table);
-
-            // 显示数据时间戳
-            const timeInfo = document.createElement('p');
-            timeInfo.textContent = `Data timestamp: ${items[0].timestamp}`;
-            container.appendChild(timeInfo);
-        }
-
-        // 调用函数生成表格（实际场景可替换为fetch API请求）
-        generatePSITable(apiData);
-
-        // 若需从真实API获取数据，可替换为以下代码：
-        /*
-        fetch('https://api.data.gov.sg/v1/environment/psi')
-            .then(response => response.json())
-            .then(data => generatePSITable(data))
-            .catch(error => {
-                document.getElementById('psiTableContainer').innerHTML = `<p>Error loading data: ${error.message}</p>`;
-            });
-        */
-    </script>
-</body>
-</html>
+# 3. 实时刷新逻辑
+plt.ion()  # 开启交互模式（关键：实现实时更新不阻塞）
+try:
+    while True:
+        update_data()  # 更新数据
+        ax.clear()     # 清空上一帧内容
+        # 绘制图表（可替换为你的图表类型，如折线图、柱状图）
+        ax.plot(x_data, y_data, color='#2E86AB', linewidth=2.5, marker='o', markersize=4)
+        # 设置坐标轴样式
+        ax.set_xlabel('数据序号', fontsize=12, labelpad=10)
+        ax.set_ylabel('实时数值', fontsize=12, labelpad=10)
+        ax.grid(True, alpha=0.3, linestyle='--')  # 浅灰色网格线，更清晰
+        ax.set_facecolor('#ffffff')  # 子图背景色
+        
+        update_title_with_date()  # 更新标题和右下角日期
+        plt.tight_layout()  # 自动调整布局，避免元素重叠
+        plt.draw()          # 绘制当前帧
+        plt.pause(update_interval)  # 暂停指定时间，控制更新频率
+except KeyboardInterrupt:
+    print("实时监控已停止")
+finally:
+    plt.ioff()  # 关闭交互模式
+    plt.show()   # 保持最后一帧显示

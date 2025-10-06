@@ -1,52 +1,147 @@
-import matplotlib.pyplot as plt
-import numpy as np
-from datetime import datetime
-import time
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSI Readings - Singapore</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 1.8em;
+        }
+        .timestamp {
+            font-size: 0.9em;
+            color: #666;
+            background-color: #e8f4e9;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #27ae60;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #eafaf1;
+        }
+        .metric-label {
+            font-weight: bold;
+            text-align: left;
+            background-color: #f1f9f4;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <h1>PSI Readings from data.gov.sg</h1>
+        <div class="timestamp" id="update-time">Loading timestamp...</div>
+    </div>
 
-# 1. 初始化图表（设置美观样式）
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS']  # 解决中文显示
-plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示
-fig, ax = plt.subplots(figsize=(10, 6), facecolor='#f8f9fa')  # 浅色背景更清爽
+    <table>
+        <thead>
+            <tr>
+                <<th>Metric</</th>
+                <<th>West</</th>
+                <<th>East</</th>
+                <<th>Central</</th>
+                <<th>South</</th>
+                <<th>North</</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <tr>
+                <td colspan="6">Loading data...</td>
+            </tr>
+        </tbody>
+    </table>
 
-# 2. 模拟实时数据（可替换为你的真实数据来源，如接口、数据库）
-x_data = []
-y_data = []
-update_interval = 1  # 数据更新间隔（秒）
+    <script>
+        // 从API获取实时数据（实际环境使用fetch）
+        fetch('https://api.data.gov.sg/v1/environment/psi')
+            .then(response => response.json())
+            .then(data => {
+                processData(data);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                document.getElementById('table-body').innerHTML = '<tr><td colspan="6">Error loading data. Check console for details.</td></tr>';
+            });
 
-def update_data():
-    """实时更新数据的核心函数"""
-    x_data.append(len(x_data) + 1)  # 模拟x轴递增（如时间戳、序号）
-    y_data.append(np.random.randint(10, 50))  # 模拟随机波动的y轴数据（替换为你的数据逻辑）
+        // 处理API数据并生成表格
+        function processData(data) {
+            const latestItem = data.items[0];
+            const readings = latestItem.readings;
+            const timestamp = latestItem.timestamp;
 
-def update_title_with_date():
-    """标题+右下角日期（通过text控件实现）"""
-    main_title = "实时数据监控图表"  # 你的主标题
-    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 实时日期时间
-    ax.set_title(main_title, fontsize=16, fontweight='bold', pad=20)  # 主标题样式
-    # 日期放在标题右下角：x=0.98（右对齐），y=0.95（标题区域内），transform绑定axes坐标
-    ax.text(0.98, 0.95, current_date, transform=ax.transAxes, 
-            fontsize=10, color='#666', ha='right', va='top')
+            // 格式化并显示时间
+            const formattedTime = new Date(timestamp).toLocaleString('en-SG', { 
+                year: 'numeric', month: 'long', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit' 
+            });
+            document.getElementById('update-time').textContent = `Last Updated: ${formattedTime}`;
 
-# 3. 实时刷新逻辑
-plt.ion()  # 开启交互模式（关键：实现实时更新不阻塞）
-try:
-    while True:
-        update_data()  # 更新数据
-        ax.clear()     # 清空上一帧内容
-        # 绘制图表（可替换为你的图表类型，如折线图、柱状图）
-        ax.plot(x_data, y_data, color='#2E86AB', linewidth=2.5, marker='o', markersize=4)
-        # 设置坐标轴样式
-        ax.set_xlabel('数据序号', fontsize=12, labelpad=10)
-        ax.set_ylabel('实时数值', fontsize=12, labelpad=10)
-        ax.grid(True, alpha=0.3, linestyle='--')  # 浅灰色网格线，更清晰
-        ax.set_facecolor('#ffffff')  # 子图背景色
-        
-        update_title_with_date()  # 更新标题和右下角日期
-        plt.tight_layout()  # 自动调整布局，避免元素重叠
-        plt.draw()          # 绘制当前帧
-        plt.pause(update_interval)  # 暂停指定时间，控制更新频率
-except KeyboardInterrupt:
-    print("实时监控已停止")
-finally:
-    plt.ioff()  # 关闭交互模式
-    plt.show()   # 保持最后一帧显示
+            // 定义需要展示的指标（按需求排序）
+            const metrics = [
+                "o3_sub_index",
+                "pm10_twenty_four_hourly",
+                "pm10_sub_index",
+                "co_sub_index",
+                "pm25_twenty_four_hourly",
+                "so2_sub_index",
+                "co_eight_hour_max",
+                "no2_one_hour_max",
+                "so2_twenty_four_hourly",
+                "pm25_sub_index",
+                "psi_twenty_four_hourly",
+                "o3_eight_hour_max"
+            ];
+
+            // 生成表格行
+            let tableContent = '';
+            metrics.forEach(metric => {
+                const metricName = metric.replace(/_/g, ' '); // 下划线转空格增强可读性
+                tableContent += `
+                <tr>
+                    <td class="metric-label">${metricName}</td>
+                    <td>${readings[metric].west}</td>
+                    <td>${readings[metric].east}</td>
+                    <td>${readings[metric].central}</td>
+                    <td>${readings[metric].south}</td>
+                    <td>${readings[metric].north}</td>
+                </tr>`;
+            });
+
+            document.getElementById('table-body').innerHTML = tableContent;
+        }
+    </script>
+</body>
+</html>
